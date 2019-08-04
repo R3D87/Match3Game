@@ -6,8 +6,6 @@ using UnityEditor;
 public class BoardGame: MonoBehaviour
 { 
 
-   
-    // public Tile baseTile;
     int offset = 6;
     int boardHeight;
     int boardWidth;
