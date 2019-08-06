@@ -12,7 +12,7 @@ public class BoardGame: MonoBehaviour
     int height =4;
     int width = 4;
     ColorTile[] colorTable;
-    ColorTile[,] colorTable_20;
+  
     public int Height
     {
         get { return height; }
@@ -27,8 +27,9 @@ public class BoardGame: MonoBehaviour
     GameObject PrefabTile;
     GameObject[,] PrefabOnBoard;
     List<Tile> GameTiles = new List<Tile>();
+    int NumberTileMakeMatched = 3;
 
-    
+
     public BoardGame(GameObject templateTile, int templateOffset)
     {
         PrefabTile = templateTile;
@@ -58,85 +59,52 @@ public class BoardGame: MonoBehaviour
         }
     }
 
-    void SwapHorizontal_CheckVertical(int idx, int limit, ColorTile baseColor, ref int counter, int idxRoot)
-    {
-        if (idx < 0 || idx >= colorTable.Length )
-            return;
-
-        if ((idxRoot / width != idx / width))
-            return;
-
-        if (limit <= 0)
-            return;
-
-        if (baseColor != colorTable[idx])
-            return;
-
-        counter++;
-        limit--;
-        Debug.Log("Vertical: " + idx + " Color: " + colorTable[idx] + " x: " + idx / width + " y: " + idx % width);
-        SwapHorizontal_CheckVertical(idx + 1, limit, baseColor, ref counter,idxRoot);
-        SwapHorizontal_CheckVertical(idx - 1, limit, baseColor, ref counter, idxRoot);
-    }
-
-    void SwapHorizontal_CheckHorizontal(int idx, int limit, ColorTile baseColor, ref int counter)
-    {
-        if (idx < 0 || idx >= colorTable.Length)
-            return;
-
-        if (limit <= 0)
-            return;
-
-        if (baseColor != colorTable[idx])
-            return;
-
-        counter++;
-       
-        limit--;
-        Debug.Log("Horizontal: " + idx + " Color: " + colorTable[idx] + " x: " + idx / width + " y: " + idx % width);
-        SwapHorizontal_CheckHorizontal(idx + width, limit, baseColor, ref counter);
-        SwapHorizontal_CheckHorizontal(idx - width, limit, baseColor, ref counter);
-    }
-
-    public bool FindOppprtunityMatching()
+   
+    void  MakeColorVectorBaseOnBoardGame()
     {
         colorTable = new ColorTile[width * height];
-        // create color vector
         for (int i = 0; i < width * height; i++)
         {
             int x = i / width;
             int y = i % width;
 
             colorTable[i] = PrefabOnBoard[x, y].GetComponent<Tile>().colorTileID;
-            PrefabOnBoard[x, y].transform.localScale = Vector3.one;
+
         }
-        // vertical swap check
-        for (int k = 1; k < colorTable.Length; k++)
+     
+    }
+    void SwapColorTile(int index, int delta)
+    {
+        ColorTile colorTileTemp;
+
+        colorTileTemp = colorTable[index];
+        colorTable[index] = colorTable[index - delta];
+        colorTable[index - delta] = colorTileTemp;
+    }
+    public bool FindOppprtunityMatching()
+    {
+        MakeColorVectorBaseOnBoardGame();
+
+      
+        for (int k = 0; k < colorTable.Length; k++)
         {
-
+            
             int counterSHV0 = 0, counterSHH0 = 0, counterSHV1 = 0, counterSHH1 = 0;
-
             Debug.Log("=============ROUND: " + k + " ============");
-            ColorTile colorTileTemp;
-
             // Heigh
-            if (k % width != 0)
+            if (k!=0 && k % width != 0)
             {
-                colorTileTemp = colorTable[k];
-                colorTable[k] = colorTable[k - 1];
-                colorTable[k - 1] = colorTileTemp;
+                SwapColorTile(k, 1);
 
                 Debug.Log("----------------------------------");
-                SwapHorizontal_CheckVertical(k, 3, colorTable[k], ref counterSHV0,k);
-                SwapHorizontal_CheckHorizontal(k, 3, colorTable[k], ref counterSHH0);
+                CheckVertical(k, NumberTileMakeMatched, colorTable[k], ref counterSHV0,k);
+                CheckHorizontal(k, NumberTileMakeMatched, colorTable[k], ref counterSHH0);
                 Debug.Log("----------------------------------");
-                SwapHorizontal_CheckVertical(k - 1, 3, colorTable[k - 1], ref counterSHV1,k-1);
-                SwapHorizontal_CheckHorizontal(k - 1, 3, colorTable[k - 1], ref counterSHH1);
+                CheckVertical(k - 1, NumberTileMakeMatched, colorTable[k - 1], ref counterSHV1,k-1);
+                CheckHorizontal(k - 1, NumberTileMakeMatched, colorTable[k - 1], ref counterSHH1);
                 Debug.Log("SHV0: " + counterSHV0 + " SHH0: " + counterSHH0 + " SHV1: " + counterSHV1 + " SHH1: " + counterSHH1);
-                colorTileTemp = colorTable[k];
-                colorTable[k] = colorTable[k - 1];
-                colorTable[k - 1] = colorTileTemp;
 
+                SwapColorTile(k, 1);
             }
 
             if (counterSHH0 >= 4 || counterSHV0 >= 4 || counterSHH1 >= 4 || counterSHV1 >= 4)
@@ -148,38 +116,27 @@ public class BoardGame: MonoBehaviour
                 return true;
             }
 
-        }
+            Debug.Log("--------------------------------------------------------------------");
+            Debug.Log("--------------Width-----------------------------Width---------------");
+            Debug.Log("--------------------------------------------------------------------");
 
-         Debug.Log("--------------------------------------------------------------------");
-         Debug.Log("--------------Width-----------------------------Width---------------");
-         Debug.Log("--------------------------------------------------------------------");
-        //horizontal swap check
-        for (int k = 0; k < colorTable.Length; k++)
-        {
             int counterSVV0 = 0, counterSVH0 = 0, counterSVV1 = 0, counterSVH1 = 0;
-
-            Debug.Log("=============ROUND: " + k + " ============");
-            ColorTile colorTileTemp;
 
             if (k >= width )
             {
-                colorTileTemp = colorTable[k - width];
-                colorTable[k - width] = colorTable[k];
-                colorTable[k] = colorTileTemp;
+                SwapColorTile(k, width);
 
                 Debug.Log("----------------------------------");
 
-                SwapVertical_CheckVertical(k, 3, colorTable[k], ref counterSVV0,k);
-                SwapVertical_CheckHorizontal(k, 3, colorTable[k], ref counterSVH0);
+                CheckVertical(k, NumberTileMakeMatched, colorTable[k], ref counterSVV0,k);
+                CheckHorizontal(k, NumberTileMakeMatched, colorTable[k], ref counterSVH0);
                 Debug.Log("----------------------------------");
-                SwapVertical_CheckVertical(k - width, 3, colorTable[k - width], ref counterSVV1, k - width);
-                SwapVertical_CheckHorizontal(k - width, 3, colorTable[k - width], ref counterSVH1);
+                CheckVertical(k - width, NumberTileMakeMatched, colorTable[k - width], ref counterSVV1, k - width);
+                CheckHorizontal(k - width, NumberTileMakeMatched, colorTable[k - width], ref counterSVH1);
 
                 Debug.Log("SVV0: " + counterSVV0 + " SHH0: " + counterSVH0 + " SVV1: " + counterSVV1 + " SVH1: " + counterSVH1);
 
-                colorTileTemp = colorTable[k - width];
-                colorTable[k - width] = colorTable[k];
-                colorTable[k] = colorTileTemp;
+                SwapColorTile(k, width);
 
             }
 
@@ -194,30 +151,31 @@ public class BoardGame: MonoBehaviour
         }
         return false;
     }
-    void SwapVertical_CheckVertical(int idx,int limit,ColorTile baseColor, ref int counter, int RootIdx)
-    {
-        if (idx >= colorTable.Length || idx<0 )
-            return ;
 
-        if (RootIdx / width != idx / width)
+    void CheckVertical(int idx, int limit, ColorTile baseColor, ref int counter, int idxRoot)
+    {
+        if (idx < 0 || idx >= colorTable.Length)
             return;
+
+        if ((idxRoot / width != idx / width))
+            return;
+
         if (limit <= 0)
-            return ;
+            return;
 
         if (baseColor != colorTable[idx])
             return;
-    
-        counter++;
-       
-        limit--;
-        Debug.Log("Vertical: "+idx+" Color: " + colorTable[idx] + " x: " + idx / width + " y: " + idx % width);
-        SwapVertical_CheckVertical(idx + 1, limit, baseColor, ref counter, RootIdx);
-        SwapVertical_CheckVertical(idx - 1, limit, baseColor, ref counter, RootIdx);
 
+        counter++;
+        limit--;
+        Debug.Log("Vertical: " + idx + " Color: " + colorTable[idx] + " x: " + idx / width + " y: " + idx % width);
+        CheckVertical(idx + 1, limit, baseColor, ref counter, idxRoot);
+        CheckVertical(idx - 1, limit, baseColor, ref counter, idxRoot);
     }
-    void SwapVertical_CheckHorizontal(int idx, int limit, ColorTile baseColor, ref int counter)
+
+    void CheckHorizontal(int idx, int limit, ColorTile baseColor, ref int counter)
     {
-        if (idx >= colorTable.Length || idx < 0 )
+        if (idx >= colorTable.Length || idx < 0)
             return;
 
         if (limit <= 0)
@@ -230,13 +188,9 @@ public class BoardGame: MonoBehaviour
 
         limit--;
         Debug.Log("Horizontal: " + idx + " Color: " + colorTable[idx] + " x: " + idx / width + " y: " + idx % width);
-        SwapVertical_CheckHorizontal(idx + width, limit, baseColor, ref counter);
-        SwapVertical_CheckHorizontal(idx - width, limit, baseColor, ref counter);
-
+        CheckHorizontal(idx + width, limit, baseColor, ref counter);
+        CheckHorizontal(idx - width, limit, baseColor, ref counter);
     }
-
-
-
 
     public void SetPrefabProperties(int xi, int yi, bool setTransformPosition)
     {
