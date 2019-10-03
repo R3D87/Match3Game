@@ -30,11 +30,12 @@ public class BoardGame: MonoBehaviour
     int NumberTileMakeMatched = 3;
 
 
-    public BoardGame(GameObject templateTile, int templateOffset)
+    public void InitBoardGame(GameObject templateTile, int templateOffset)
     {
         PrefabTile = templateTile;
         offset = templateOffset;
         PrefabOnBoard = new GameObject[width, height];
+        CreateBoard();
     }
 
     public void Shuffle()
@@ -269,7 +270,7 @@ public class BoardGame: MonoBehaviour
         return TilePrefab;
     }
 
-    public void CreateBoard()
+    void CreateBoard()
     {
         for (int x = 0; x < width; x++)
         {

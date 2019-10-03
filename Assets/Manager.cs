@@ -36,8 +36,8 @@ public class Manager : MonoBehaviour
 
     private void Start()
     {
-        boardGame = new BoardGame(TemplateTile, offset);
-        boardGame.CreateBoard();
+        boardGame = GetComponent<BoardGame>();
+        boardGame.InitBoardGame(TemplateTile, offset);
         RemoveAllMatechesTiles();
     }
 
