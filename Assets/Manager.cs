@@ -4,8 +4,6 @@ using UnityEngine;
 using UnityEditor;
 
 
-
-
 public class Manager : MonoBehaviour
 {
     public delegate void CoroutineDelegate();
@@ -21,13 +19,12 @@ public class Manager : MonoBehaviour
     GameObject left;
     GameObject right;
     BoardGame boardGame;
-    
 
- 
     LayerMask mask;
     Tile currentSelectedTile = null;
     Tile previousSelectedTile = null;
     List<Tile> MatchedList = new List<Tile>();
+    bool IsDebug= false;
 
     private void Awake()
     {
@@ -38,10 +35,10 @@ public class Manager : MonoBehaviour
     {
         boardGame = new BoardGame(TemplateTile, offset);
         boardGame.CreateBoard();
-        RemoveAllMatechesTiles();
+        RemoveAllMatchedTiles();
     }
 
-    bool FindMatedTiles()
+    bool FindMatchedTiles()
     {    
         MatchedList = MatchTileCheckAll();
 
@@ -51,13 +48,13 @@ public class Manager : MonoBehaviour
             return false;
     }
 
-    IEnumerator ieRemoveAllMatechesTiles()
+    IEnumerator IRemoveAllMatechedTiles()
     { 
         bool Conitnue;   
         do
         {
             Conitnue = false;
-            while (FindMatedTiles())
+            while (FindMatchedTiles())
             {
                 DestroyMatchedTile();
                 yield return new WaitForSeconds(0.5f);
@@ -67,16 +64,15 @@ public class Manager : MonoBehaviour
                 yield return new WaitForSeconds(1f);
             }
 
-            while (!boardGame.FindOppprtunityMatching())
+            while (!boardGame.FindOpportunityMatching())
             {
                 boardGame.Shuffle();
                 yield return new WaitForSeconds(1f);
 
                 Conitnue = true;
 
-                StartCoroutine(ieAutoShuffle());
-                yield return new WaitForSeconds(1f);
-               
+                StartCoroutine(IAutoShuffle());
+                yield return new WaitForSeconds(1f);    
             }
 
         } while (Conitnue);
@@ -85,18 +81,17 @@ public class Manager : MonoBehaviour
         yield return null; 
     }
 
-    IEnumerator ieAutoShuffle()
+    IEnumerator IAutoShuffle()
     {
         ExecuteMove();
-        Debug.Log("Animation Shuffle");
+        if(IsDebug)
+            Debug.Log("Animation Shuffle");
         yield return null;
     }
 
-
-
-    void RemoveAllMatechesTiles()
+    void RemoveAllMatchedTiles()
     {
-        StartCoroutine(ieRemoveAllMatechesTiles());
+        StartCoroutine(IRemoveAllMatechedTiles());
     }
  
     void SkipAnimation ()
@@ -109,20 +104,18 @@ public class Manager : MonoBehaviour
             }
         }
     }
-    private void OnMouseDown()
-    {
-        Debug.Log("MouseDown");
-    }
+
     void ClickTile(Tile tile)
     {
-
         previousSelectedTile = currentSelectedTile;
         if (previousSelectedTile != null)
-            previousSelectedTile.BIsSelected = false;
-
-        Debug.Log("Tile clicked: " + tile.colorTileID + " IsSelected: " + tile.BIsSelected+ " PosX: "+ tile.PositionX+ " PosY: "+tile.PositionY+ " Location: "+ tile.gameObject.transform.position);
-        Debug.Log("Color: " + tile.colorTileID + " X: " + tile.PositionX + " Y: " + tile.PositionY);
-        if (tile.BIsSelected == false)
+            previousSelectedTile.IsSelected = false;
+        if (IsDebug)
+        {
+            Debug.Log("Tile clicked: " + tile.colorTileID + " IsSelected: " + tile.IsSelected + " PosX: " + tile.PositionX + " PosY: " + tile.PositionY + " Location: " + tile.gameObject.transform.position);
+            Debug.Log("Color: " + tile.colorTileID + " X: " + tile.PositionX + " Y: " + tile.PositionY);
+        }
+        if (tile.IsSelected == false)
         {
             currentSelectedTile = tile;
             SelectTile(currentSelectedTile);
@@ -132,23 +125,20 @@ public class Manager : MonoBehaviour
             DiselectTile(currentSelectedTile);
             currentSelectedTile = null;
         }
-
-        if (isAbleToSwapTile())
+        if (canTileSwap())
         {
-            
-            Debug.Log("cur:" + currentSelectedTile.colorTileID);
-            Debug.Log("prev: " + previousSelectedTile.colorTileID);
+            if (IsDebug)
+            {
+                Debug.Log("cur:" + currentSelectedTile.colorTileID);
+                Debug.Log("prev: " + previousSelectedTile.colorTileID);
+            }
 
             if (SwapTile())
             {
-               
-                ExecuteSwap();
-                
+                ExecuteSwap(); 
             }
             else
             {
-               
-              
                 ExecuteUndoSwap();
             }
         }
@@ -159,21 +149,17 @@ public class Manager : MonoBehaviour
             DiselectTile(previousSelectedTile);
             previousSelectedTile = null;
         }
-
     }
 
-    bool isAbleToSwapTile()
+    bool canTileSwap()
     {
-
         if (currentSelectedTile != null && previousSelectedTile != null)
             if (isNeighborTile() == true)
             {
                 return true;
             }
-
         return false;
     }
-
 
     bool isNeighborTile()
     {
@@ -199,14 +185,12 @@ public class Manager : MonoBehaviour
     void ExecuteSwap()
     {
 
-        OnFinishCoroutine += RemoveAllMatechesTiles;
+        OnFinishCoroutine += RemoveAllMatchedTiles;
         StartCoroutine(SwapAnim(GetGameObjectForTile(currentSelectedTile), GetGameObjectForTile(previousSelectedTile), 0.5f, OnFinishCoroutine));
-        OnFinishCoroutine -= RemoveAllMatechesTiles;
+        OnFinishCoroutine -= RemoveAllMatchedTiles;
        
         previousSelectedTile = null;
         currentSelectedTile = null;
-
-      
     }
     void ExecuteUndoSwap()
     {
@@ -234,55 +218,51 @@ public class Manager : MonoBehaviour
         if (MatchedList.Count != 0)
         {
             bCanSwap = true;
-
         }
         else
         {
 
             boardGame.SwapTileSync(currentSelectedTile, previousSelectedTile);
             bCanSwap = false;
-
-
         }
 
+        if (IsDebug)
+        {
+            Debug.Log("After Swap:");
+            Debug.Log("CurrentTile: " + currentSelectedTile.colorTileID + " X: " + currentSelectedTile.PositionX + " Y: " + currentSelectedTile.PositionY);
+            Debug.Log("PreviousTile: " + previousSelectedTile.colorTileID + " X: " + previousSelectedTile.PositionX + " Y: " + previousSelectedTile.PositionY);
 
-        Debug.Log("After Swap:");
-        Debug.Log("CurrentTile: " + currentSelectedTile.colorTileID + " X: " + currentSelectedTile.PositionX + " Y: " + currentSelectedTile.PositionY);
-        Debug.Log("PreviousTile: " + previousSelectedTile.colorTileID + " X: " + previousSelectedTile.PositionX + " Y: " + previousSelectedTile.PositionY);
-
-        Debug.Log("GameBoard Data:");
-        Debug.Log("PreviousTile: " + boardGame.GetTileFormCoord(previousPositonX, previousPositonY).GetComponent<Tile>().colorTileID +
-            " X: " + boardGame.GetTileFormCoord(previousPositonX, previousPositonY).GetComponent<Tile>().PositionX +
-            " Y: " + boardGame.GetTileFormCoord(previousPositonX, previousPositonY).GetComponent<Tile>().PositionY);
-        Debug.Log("CurrentTile: " + boardGame.GetTileFormCoord(currentPositonX, currentPositonY).GetComponent<Tile>().colorTileID +
-          " X: " + boardGame.GetTileFormCoord(currentPositonX, currentPositonY).GetComponent<Tile>().PositionX +
-           " Y: " + boardGame.GetTileFormCoord(currentPositonX, currentPositonY).GetComponent<Tile>().PositionY);
-
-
+            Debug.Log("GameBoard Data:");
+            Debug.Log("PreviousTile: " + boardGame.GetTileFormCoord(previousPositonX, previousPositonY).GetComponent<Tile>().colorTileID +
+                " X: " + boardGame.GetTileFormCoord(previousPositonX, previousPositonY).GetComponent<Tile>().PositionX +
+                " Y: " + boardGame.GetTileFormCoord(previousPositonX, previousPositonY).GetComponent<Tile>().PositionY);
+            Debug.Log("CurrentTile: " + boardGame.GetTileFormCoord(currentPositonX, currentPositonY).GetComponent<Tile>().colorTileID +
+              " X: " + boardGame.GetTileFormCoord(currentPositonX, currentPositonY).GetComponent<Tile>().PositionX +
+               " Y: " + boardGame.GetTileFormCoord(currentPositonX, currentPositonY).GetComponent<Tile>().PositionY);
+        }
         return bCanSwap;
     }
 
     void SelectTile(Tile tile)
     {
-
-        tile.BIsSelected = true;
+        tile.IsSelected = true;
         SelectedTileAnim(tile);
     }
-
-
 
     GameObject GetGameObjectForTile(Tile tile)
     {
         GameObject TileObject = tile.gameObject;
         return TileObject;
     }
+
     void DiselectTile(Tile tile)
     {
         DeselectedTileAnim(tile);
 
-        tile.BIsSelected = false;
+        tile.IsSelected = false;
 
     }
+
     void SelectedTileAnim(Tile tile)
     {
         
@@ -291,7 +271,6 @@ public class Manager : MonoBehaviour
 
         StartCoroutine(ScaleAnim(TileObject,scaleFinal, 0.2f, OnFinishCoroutine));
     }
-
 
     IEnumerator SwapAnim(GameObject gameObjectA, GameObject gameObjectB, float duration, CoroutineDelegate DelegateOnFinishCoroutine)
     {
@@ -316,14 +295,7 @@ public class Manager : MonoBehaviour
             DelegateOnFinishCoroutine();
 
         }
-
-
-      
-
-
-
     }
-
 
     IEnumerator ScaleAnim(GameObject TileObject, Vector3 targetScale, float duretion, CoroutineDelegate DelegateOnFinishCoroutine)
     {
@@ -340,28 +312,22 @@ public class Manager : MonoBehaviour
         if (DelegateOnFinishCoroutine != null)
         {
             DelegateOnFinishCoroutine();
-
         }
         isCoroutineProgressing = false;
     }
-   
 
     void DeselectedTileAnim(Tile tile)
     {
         GameObject TileObject = GetGameObjectForTile(tile);
         Vector3 scaleFinal = Vector3.one;
-    
-
-        StartCoroutine(ScaleAnim(TileObject,scaleFinal, 0.2f, OnFinishCoroutine));
-       
-        
+        StartCoroutine(ScaleAnim(TileObject,scaleFinal, 0.2f, OnFinishCoroutine)); 
     }
 
 
     List<Tile> MatchTileCheckNeighbours(int x, int y)
     {
         HashSet<Tile> MatchSet = new HashSet<Tile>();
-        //Debug.Log("x: " + x + " y: " + y);
+
         int x1, x2, x3, y1, y2, y3;
         ColorTile ColorTarget = boardGame.GetColorTileFormCoord(x, y);
         int[] Template = new int[] { -2, -1, 0 };
@@ -371,7 +337,6 @@ public class Manager : MonoBehaviour
             x1 = x + Template[0] + i;
             x2 = x + Template[1] + i;
             x3 = x + Template[2] + i;
-            //Debug.Log("x1: " + x1 + " x2: " + x2 + " x3: " + x3);
 
             if (x1 >= 0 && x2 >= 0 && x3 >= 0 && boardGame.Width > x1 && boardGame.Width > x2 && boardGame.Width > x3)
             {
@@ -388,7 +353,7 @@ public class Manager : MonoBehaviour
             y1 = y + Template[0] + i;
             y2 = y + Template[1] + i;
             y3 = y + Template[2] + i;
-            //Debug.Log("y1: " + y1 + " y2: " + y2 + " y3: " + y3);
+
             if (y1 >= 0 && y >= 0 && y3 >= 0 && boardGame.Height > y1 && boardGame.Height > y2 && boardGame.Height > y3)
             {
                 if (ColorTarget == boardGame.GetColorTileFormCoord(x, y1) &&
@@ -401,12 +366,7 @@ public class Manager : MonoBehaviour
                 }
             }
         }
-        foreach (var item in MatchSet)
-        {
-            //Debug.Log("item: " + item.PositionX + " " + item.PositionY);
-        }
         return new List<Tile>(MatchSet);
-
     }
 
     List<Tile> MatchTileCheckAll()
@@ -423,9 +383,7 @@ public class Manager : MonoBehaviour
             {
                 int horizontalCounter = 0;
                 int verticalCounter = 0;
-                //Debug.Log("Color: " + boardGame.GetTileFormCoord(x, y).colorTileID + " x: " + x + " y: " + y);
-
-
+              
                 for (int k = 1; k <= 2; k++)
                 {
                     int xNeighbour = x + k;
@@ -435,18 +393,14 @@ public class Manager : MonoBehaviour
                     {
                         break;
                     }
-                    //Debug.Log("Color: " + boardGame.GetTileFormCoord(xNeighbour, y).colorTileID + " xNeighbour:" + xNeighbour + " y: " + y);
+
                     ColorTile targetColor = boardGame.GetColorTileFormCoord(x, y);
-
                     ColorTile neighbourHorizontalColor = boardGame.GetColorTileFormCoord(xNeighbour, y);
-
 
                     if (neighbourHorizontalColor == targetColor)
                     {
                         horizontalCounter++;
                     }
-
-
                 }
 
                 for (int k = 1; k <= 2; k++)
@@ -457,19 +411,16 @@ public class Manager : MonoBehaviour
                     {
                         break;
                     }
-                    //Debug.Log("Color: " + boardGame.GetTileFormCoord(x, yNeighbour).colorTileID + "x: " + x + " yNeighbour: " + yNeighbour);
+                 
                     ColorTile targetColor = boardGame.GetColorTileFormCoord(x, y);
-
-
                     ColorTile neighbourVerticalColor = boardGame.GetColorTileFormCoord(x, yNeighbour);
 
                     if (neighbourVerticalColor == targetColor)
                     {
                         verticalCounter++;
-                    }
-
+                    }           
                 }
-                //Debug.Log("-------------------------------------");
+
                 if (verticalCounter == 2)
                 {
                     if (!VerticalTileMatch.Contains(boardGame.GetTileFormCoord(x, y)))
@@ -479,6 +430,7 @@ public class Manager : MonoBehaviour
                         VerticalTileMatch.Add(boardGame.GetTileFormCoord(x, y + 2));
                     }
                 }
+
                 if (horizontalCounter == 2)
                 {
                     if (!HotizontalTileMatch.Contains(boardGame.GetTileFormCoord(x, y)))
@@ -492,25 +444,19 @@ public class Manager : MonoBehaviour
             }
         }
 
-
-
-        //Debug.Log("List of Matched items:\n\n");
         foreach (var item in HotizontalTileMatch)
         {
-            //Debug.Log("Color Tile: " + item.colorTileID + " x: " + item.PositionX + " y: " + item.PositionY);
             TileMatch.Add(item);
         }
         foreach (var item in VerticalTileMatch)
         {
-            //Debug.Log("Color Tile: " + item.colorTileID + " x: " + item.PositionX + " y: " + item.PositionY);
             if (!TileMatch.Contains(item))
                 TileMatch.Add(item);
         }
 
         return TileMatch;
-
-
     }
+
     void executeGameBoardRepair()
     {
         boardGame.FillGap();
@@ -522,17 +468,13 @@ public class Manager : MonoBehaviour
 
         if (Limit == 0)
                     return;
-
-
         Limit--;
-
 
         FloodFill(x - 1, y, color, Limit);
         FloodFill(x + 1, y, color, Limit);
         FloodFill(x, y - 1, color, Limit);
         FloodFill(x, y + 1, color, Limit);
     }
-
 
     void ExecuteMove()
     {
@@ -546,7 +488,6 @@ public class Manager : MonoBehaviour
             }
         }
     }
-
  
     public void DestroyMatchedTile()
     {
@@ -561,17 +502,12 @@ public class Manager : MonoBehaviour
     }
     public void DestroyTileAnimation(int x, int y)
     {
-       
             StartCoroutine(ExecuteDestroyTileAnimation(boardGame.GetTileFormCoord(x,y).gameObject, new Vector3(0, 0, 0), 0.3f, OnFinishCorutineInTile));
-       
-
     }
-
- 
 
     IEnumerator ExecuteDestroyTileAnimation(GameObject TileObject, Vector3 targetScale, float duretion, CoroutineDelegate DelegateOnFinishCoroutine)
     {
-        // isCoroutineProgressing = true;
+
         float progress = 0;
         while (progress <= duretion)
         {
@@ -587,24 +523,21 @@ public class Manager : MonoBehaviour
 
         }
         boardGame.RemoveTile(TileObject.GetComponent<Tile>().PositionX, TileObject.GetComponent<Tile>().PositionY);
-        //isCoroutineProgressing = false;
+  
     }
+
     public void MoveTileAnimation(GameObject PrefabTile, int x, int y)
     {
         Vector3 targetPosition = boardGame.getPrefabLocation(x, y);
-        //if (targetPosition != gameObject.transform.position)
-        {
-            
-            StartCoroutine(ExecuteMoveTileAnimation(PrefabTile, targetPosition, 1.5f, OnFinishCorutineInTile));
-            
-        }
+       StartCoroutine(ExecuteMoveTileAnimation(PrefabTile, targetPosition, 1.5f, OnFinishCorutineInTile));
+
     }
 
     IEnumerator ExecuteMoveTileAnimation(GameObject PrefabObject, Vector3 targetPosition, float duration, CoroutineDelegate DelegateOnFinishCoroutine)
     {
         float progress = 0;
         Vector3 startPosition = gameObject.transform.position;
-        //yield return new WaitForSeconds(2f);
+
         while (progress <= duration)
         {
             progress = progress + Time.deltaTime;
@@ -620,10 +553,7 @@ public class Manager : MonoBehaviour
             DelegateOnFinishCoroutine();
 
         }
-
-
     }
-
 
     private void Update()
     {
@@ -632,8 +562,6 @@ public class Manager : MonoBehaviour
         bool bDoOnce = true;
         if (Input.GetKeyDown(KeyCode.Z))
 
-
-
         if (Input.GetKeyDown(KeyCode.Space))
         {
               DestroyMatchedTile();
@@ -641,10 +569,8 @@ public class Manager : MonoBehaviour
         }
 
         if (Input.GetKeyDown(KeyCode.E))
-        {
-           
+        { 
             MatchedList = MatchTileCheckAll();
-
 
         }
         if (Input.GetKeyDown(KeyCode.S))
@@ -656,41 +582,28 @@ public class Manager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.T))
         {
             MatchedList = MatchTileCheckAll();
-
-        }
-        if(Input.GetKeyDown(KeyCode.A))
-        {
-    //        boardGame.TestAnim();
         }
 
         if (bButtonDown && bDoOnce)
         {
             bDoOnce = false;
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-               
-            Debug.DrawRay(ray.origin, ray.direction, Color.red, int.MaxValue);
+            if(IsDebug)  
+                Debug.DrawRay(ray.origin, ray.direction, Color.red, int.MaxValue);
             RaycastHit hitInfo;
          
             if (Physics.Raycast(ray,out hitInfo))
             {
-              //  //Debug.Log(mask.ToString());
                 Physics.Raycast(ray, out hitInfo, int.MaxValue, mask);
                 GameObject hitObject = hitInfo.collider.gameObject;
                 Renderer renderer = hitObject.GetComponent<Renderer>();
 
-
-              //  //Debug.Log(renderer.material.name);
                 if (hitObject.GetComponent<Tile>() != null)
                 {
                     ClickTile(hitObject.GetComponent<Tile>());
-                    
-                    ////Debug.Log(hitObject.GetComponent<Tile>().PositionX + " " + hitObject.GetComponent<Tile>().PositionY);
                 }
             }
         }
         bDoOnce = bButtonUp;
-
-        
     }
-
 }

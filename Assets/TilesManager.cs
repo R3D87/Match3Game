@@ -17,10 +17,8 @@ public class TilesManager: MonoBehaviour
 
     public Material[] arrayMat;
     static public Dictionary<ColorTile, Material> ColorID = new Dictionary<ColorTile, Material>();
-  
 
-
-     Material FindMaterial(string matName)
+    Material FindMaterial(string matName)
     {
         Material tempMat = null;
         foreach (Material item in arrayMat)
@@ -32,11 +30,9 @@ public class TilesManager: MonoBehaviour
             }
 
         }
-
-
         return tempMat;
-
     }
+
     private void Awake()
     {
         ColorID.Add(ColorTile.Blue, FindMaterial("Blue"));
@@ -47,22 +43,14 @@ public class TilesManager: MonoBehaviour
         ColorID.Add(ColorTile.Yellow, FindMaterial("Yellow"));
     }
 
-
-
-
     static public ColorTile RandomPickColorID()
     {
-        
         int max = ColorID.Count;
         int index = Random.Range(0, max);
 
         return (ColorTile)index;
-
-
     }
 
-  
-  
 }
       
    

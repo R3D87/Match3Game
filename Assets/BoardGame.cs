@@ -4,31 +4,30 @@ using UnityEngine;
 using UnityEditor;
 
 public class BoardGame: MonoBehaviour
-{ 
-
+{
+    bool isDebug = false;
     int offset = 6;
     int boardHeight;
     int boardWidth;
     int height =4;
     int width = 4;
+    int NumberTileMakeMatched = 3;
+
+    GameObject PrefabTile;
+    GameObject[,] PrefabOnBoard;
+    List<Tile> GameTiles = new List<Tile>();
     ColorTile[] colorTable;
   
     public int Height
     {
         get { return height; }
-        set { height = value;}
+        set { height = value; }
     }
     public int Width
     {
         get { return width; }
-        set { width = value;}
+        set { width = value; }
     }
-
-    GameObject PrefabTile;
-    GameObject[,] PrefabOnBoard;
-    List<Tile> GameTiles = new List<Tile>();
-    int NumberTileMakeMatched = 3;
-
 
     public BoardGame(GameObject templateTile, int templateOffset)
     {
@@ -59,7 +58,6 @@ public class BoardGame: MonoBehaviour
         }
     }
 
-   
     void  MakeColorVectorBaseOnBoardGame()
     {
         colorTable = new ColorTile[width * height];
@@ -69,83 +67,68 @@ public class BoardGame: MonoBehaviour
             int y = i % width;
 
             colorTable[i] = PrefabOnBoard[x, y].GetComponent<Tile>().colorTileID;
-
-        }
-     
+        }  
     }
+
     void SwapColorTile(int index, int delta)
     {
         ColorTile colorTileTemp;
-
         colorTileTemp = colorTable[index];
         colorTable[index] = colorTable[index - delta];
         colorTable[index - delta] = colorTileTemp;
     }
-    public bool FindOppprtunityMatching()
+
+    public bool FindOpportunityMatching()
     {
         MakeColorVectorBaseOnBoardGame();
-
-      
         for (int k = 0; k < colorTable.Length; k++)
-        {
-            
+        { 
             int counterSHV0 = 0, counterSHH0 = 0, counterSHV1 = 0, counterSHH1 = 0;
-            Debug.Log("=============ROUND: " + k + " ============");
-            // Heigh
+            if(isDebug)
+                Debug.Log("=============ROUND: " + k + " ============");
+
             if (k!=0 && k % width != 0)
             {
                 SwapColorTile(k, 1);
-
-                Debug.Log("----------------------------------");
                 CheckVertical(k, NumberTileMakeMatched, colorTable[k], ref counterSHV0,k);
                 CheckHorizontal(k, NumberTileMakeMatched, colorTable[k], ref counterSHH0);
-                Debug.Log("----------------------------------");
+
                 CheckVertical(k - 1, NumberTileMakeMatched, colorTable[k - 1], ref counterSHV1,k-1);
                 CheckHorizontal(k - 1, NumberTileMakeMatched, colorTable[k - 1], ref counterSHH1);
-                Debug.Log("SHV0: " + counterSHV0 + " SHH0: " + counterSHH0 + " SHV1: " + counterSHV1 + " SHH1: " + counterSHH1);
+
+                if (isDebug)
+                    Debug.Log("SHV0: " + counterSHV0 + " SHH0: " + counterSHH0 + " SHV1: " + counterSHV1 + " SHH1: " + counterSHH1);
 
                 SwapColorTile(k, 1);
             }
 
             if (counterSHH0 >= 4 || counterSHV0 >= 4 || counterSHH1 >= 4 || counterSHV1 >= 4)
             {
-                
-                Debug.Log("-----------MATCH-------------");
-                Debug.Log("-----------MATCH-------------");
-                Debug.Log("-----------MATCH-------------");
+                if(isDebug)
+                    Debug.Log("-----------MATCH-------------");
                 return true;
             }
 
-            Debug.Log("--------------------------------------------------------------------");
-            Debug.Log("--------------Width-----------------------------Width---------------");
-            Debug.Log("--------------------------------------------------------------------");
-
             int counterSVV0 = 0, counterSVH0 = 0, counterSVV1 = 0, counterSVH1 = 0;
-
             if (k >= width )
             {
                 SwapColorTile(k, width);
 
-                Debug.Log("----------------------------------");
-
                 CheckVertical(k, NumberTileMakeMatched, colorTable[k], ref counterSVV0,k);
                 CheckHorizontal(k, NumberTileMakeMatched, colorTable[k], ref counterSVH0);
-                Debug.Log("----------------------------------");
                 CheckVertical(k - width, NumberTileMakeMatched, colorTable[k - width], ref counterSVV1, k - width);
                 CheckHorizontal(k - width, NumberTileMakeMatched, colorTable[k - width], ref counterSVH1);
 
-                Debug.Log("SVV0: " + counterSVV0 + " SHH0: " + counterSVH0 + " SVV1: " + counterSVV1 + " SVH1: " + counterSVH1);
+                if (isDebug)
+                    Debug.Log("SVV0: " + counterSVV0 + " SHH0: " + counterSVH0 + " SVV1: " + counterSVV1 + " SVH1: " + counterSVH1);
 
                 SwapColorTile(k, width);
-
             }
 
             if (counterSVH0 >= 4 || counterSVV0 >= 4 || counterSVH1 >= 4 || counterSVV1 >= 4)
             {
-                // return true;
-                Debug.Log("-----------MATCH-------------");
-                Debug.Log("-----------MATCH-------------");
-                Debug.Log("-----------MATCH-------------");
+                if (isDebug)
+                    Debug.Log("-----------MATCH-------------");
                 return true;
             }
         }
@@ -168,7 +151,8 @@ public class BoardGame: MonoBehaviour
 
         counter++;
         limit--;
-        Debug.Log("Vertical: " + idx + " Color: " + colorTable[idx] + " x: " + idx / width + " y: " + idx % width);
+        if (isDebug)
+            Debug.Log("Vertical: " + idx + " Color: " + colorTable[idx] + " x: " + idx / width + " y: " + idx % width);
         CheckVertical(idx + 1, limit, baseColor, ref counter, idxRoot);
         CheckVertical(idx - 1, limit, baseColor, ref counter, idxRoot);
     }
@@ -185,9 +169,9 @@ public class BoardGame: MonoBehaviour
             return;
 
         counter++;
-
         limit--;
-        Debug.Log("Horizontal: " + idx + " Color: " + colorTable[idx] + " x: " + idx / width + " y: " + idx % width);
+        if (isDebug)
+            Debug.Log("Horizontal: " + idx + " Color: " + colorTable[idx] + " x: " + idx / width + " y: " + idx % width);
         CheckHorizontal(idx + width, limit, baseColor, ref counter);
         CheckHorizontal(idx - width, limit, baseColor, ref counter);
     }
@@ -199,8 +183,8 @@ public class BoardGame: MonoBehaviour
 
         PrefabOnBoard[xi, yi].GetComponent<Tile>().PositionX = xi;
         PrefabOnBoard[xi, yi].GetComponent<Tile>().PositionY = yi;
-
     }
+
     public ColorTile GetColorTileFormCoord(int x, int y)
     {
         GameObject singleTile = PrefabOnBoard[x, y];
@@ -228,7 +212,6 @@ public class BoardGame: MonoBehaviour
     public void AddPrefabToBoard(GameObject newGameObject, int x,int y)
     {
         PrefabOnBoard[x, y] = newGameObject;
-       // PrefabOnBoard[x, y].gameObject.transform.position = getPrefabLocation(x, y);
     }
 
     public void SwapTileSync(Tile currentTile,Tile previousTile)
@@ -245,7 +228,6 @@ public class BoardGame: MonoBehaviour
 
         PrefabOnBoard[x2, y2] = TempObject;
         SetPrefabProperties(x2, y2,false);
-
     }
    
     public Vector3 getPrefabLocation(int x, int y)
@@ -280,10 +262,8 @@ public class BoardGame: MonoBehaviour
         }
     }
 
-    public  void  FillGap()
+    public void FillGap()
     {
-        //int width = boardGame.Width;
-        //int height = boardGame.Height;
         GameObject[] arrayWithGaps;
         GameObject[] arrayNoGaps;
         GameObject[,] arrayForMoveAnim = new GameObject[width, height];
@@ -293,7 +273,6 @@ public class BoardGame: MonoBehaviour
             int countGaps = 0;
             arrayWithGaps = new GameObject[height];
             arrayNoGaps = new GameObject[height];
-
 
             for (int y = 0; y < height; y++)
             {
@@ -322,36 +301,18 @@ public class BoardGame: MonoBehaviour
                 else
                 {
                     arrayNoGaps[idx2] = InitializeTilePrefab(x, idx2);
-
                     Vector3 position = getPrefabLocation(x, idx2 + countGaps);
                     GetTileFormCoord(x, idx2).gameObject.transform.position = position;
-                    //Debug.Log(arrayNoGaps[idx2].GetComponent<Tile>().colorTileID);
                     idx2++;
                 }
 
             }
 
-            //Debug.Log("-------------------");
-
-
-
-            foreach (var item in arrayNoGaps)
-            {
-                //Debug.Log("item: " + item.GetComponent<Tile>().colorTileID + " x: " + item.GetComponent<Tile>().PositionX + " y: " + item.GetComponent<Tile>().PositionY);
-            }
-
             for (int i = 0; i < height; i++)
             {
-
                 AddPrefabToBoard(arrayNoGaps[i], x, i);
                 arrayForMoveAnim[x, i] = arrayNoGaps[i];
-                //Debug.Log(arrayForMoveAnim[x, i].GetComponent<Tile>().colorTileID );
-                // StopCoroutine("MoveAnim");
-                // StartCoroutine(MoveAnim(boardGame.GetTileFormCoord(x, i).gameObject, x, i, .5f));
             }
-
         }
     }
-
-
 }

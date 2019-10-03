@@ -5,49 +5,42 @@ using UnityEngine;
 [RequireComponent(typeof(Renderer))]
 public class Tile : MonoBehaviour {
 
-    
-
-    // Use this for initialization
     [SerializeField]
     int positionX;
     [SerializeField]
     int positionY;
+    public ColorTile colorTileID;
+    Renderer rend;
     int boardID;
     bool bIsSelected;
-   public ColorTile colorTileID;
 
-    public bool BIsSelected
+    public bool IsSelected
     {
-        get { return bIsSelected; }
-        set { bIsSelected = value; }
-
+        get { return bIsSelected;}
+        set { bIsSelected = value;}
     }
 
     public int BoardID
     {
-        get { return boardID; }
-        set { boardID = value; }
+        get { return boardID;}
+        set { boardID = value;}
     }
 
     public int PositionX
     {
-        get { return positionX; }
-        set { positionX = value;
-            
-            
-                                }
+        get { return positionX;}
+        set { positionX = value;}
     }
 
     public int PositionY
     {
-        get { return positionY; }
+        get { return positionY;}
         set { positionY = value;}
     }
 
     public void convertPositionToBoardID(int width)
     {
-        BoardID = PositionX + width * PositionY;
-        
+        BoardID = PositionX + width * PositionY;  
     }
 
     public void convertBoardIDToPosition(int width)
@@ -56,15 +49,12 @@ public class Tile : MonoBehaviour {
         PositionY = BoardID / width;
     }
 
-    Renderer rend;
-
     public void AddRandomColor()
     {
         colorTileID = TilesManager.RandomPickColorID();
         rend = GetComponent<Renderer>();
         rend.enabled = true;
-        rend.sharedMaterial = TilesManager.ColorID[colorTileID];
-        //Debug.Log(colorTileID);
+        rend.sharedMaterial = TilesManager.ColorID[colorTileID];      
     }
 
     public void DestroyObject()
